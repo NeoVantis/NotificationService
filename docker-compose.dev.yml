@@ -1,0 +1,110 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: notifications_postgres_dev
+    environment:
+      POSTGRES_DB: notifications_dev
+      POSTGRES_USER: notifications_user
+      POSTGRES_PASSWORD: dev_password_123
+      PGDATA: /var/lib/postgresql/data/pgdata
+    ports:
+      - '5432:5432'
+    volumes:
+      - postgres_data_dev:/var/lib/postgresql/data
+      - ./scripts/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
+    healthcheck:
+      test:
+        ['CMD-SHELL', 'pg_isready -U notifications_user -d notifications_dev']
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    networks:
+      - notifications_network
+
+  # Redis for Queue Management
+  redis:
+    image: redis:7-alpine
+    container_name: notifications_redis_dev
+    ports:
+      - '6379:6379'
+    volumes:
+      - redis_data_dev:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    networks:
+      - notifications_network
+
+  # Notification Service
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: notifications_app_dev
+    ports:
+      - '4321:4321'
+    environment:
+      NODE_ENV: development
+      PORT: 4321
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: notifications_dev
+      DB_USERNAME: notifications_user
+      DB_PASSWORD: dev_password_123
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ''
+      QUEUE_REDIS_HOST: redis
+      QUEUE_REDIS_PORT: 6379
+      QUEUE_REDIS_DB: 1
+      MAIL_HOST: mail.neovantis.xyz
+      MAIL_PORT: 465
+      MAIL_SECURE: 'true'
+      MAIL_USER: no-reply@neovantis.xyz
+      MAIL_PASS: ${MAIL_PASS}
+      LOG_LEVEL: debug
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - ./logs:/app/logs
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ['CMD', 'curl', '-f', 'http://localhost:4321/api/v1/health/simple']
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - notifications_network
+
+  # Redis Commander (Development GUI)
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    container_name: notifications_redis_commander
+    ports:
+      - '8081:8081'
+    environment:
+      REDIS_HOSTS: local:redis:6379
+    depends_on:
+      - redis
+    networks:
+      - notifications_network
+
+volumes:
+  postgres_data_dev:
+    driver: local
+  redis_data_dev:
+    driver: local
+
+networks:
+  notifications_network:
+    driver: bridge

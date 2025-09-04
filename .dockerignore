@@ -1,0 +1,33 @@
+# Add development compose file
+docker-compose.dev.yml
+
+# Add production compose file  
+docker-compose.prod.yml
+
+# Environment files
+.env.dev
+.env.prod
+.env.local
+.env.*.local
+
+# Docker development files
+Dockerfile.dev
+
+# Configuration files that may contain secrets
+config/ssl/
+config/*.key
+config/*.crt
+
+# Backup files
+scripts/backups/
+*.sql
+*.sql.gz
+
+# Production logs
+logs/nginx/
+logs/postgresql/
+logs/redis/
+
+# Temporary files
+tmp/
+temp/
