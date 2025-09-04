@@ -16,7 +16,7 @@ This guide provides comprehensive instructions for deploying the NeoVantis Notif
 ### Development Environment
 ```bash
 # Clone and setup
-git clone <repository-url>
+git clone https://github.com/NeoVantis/NotificationService.git
 cd NotificationService
 
 # Run development setup
@@ -27,7 +27,7 @@ chmod +x setup-dev.sh
 ### Production Environment
 ```bash
 # Clone and setup
-git clone <repository-url>
+git clone https://github.com/NeoVantis/NotificationService.git
 cd NotificationService
 
 # Run production setup

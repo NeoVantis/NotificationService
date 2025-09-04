@@ -12,7 +12,7 @@ export class HealthController {
     try {
       const health = await this.healthService.getHealthStatus();
       return health;
-    } catch (error) {
+    } catch (error: unknown) {
       this.logger.error('Health check failed:', error);
       return {
         status: 'error',
@@ -41,7 +41,7 @@ export class HealthController {
         message: 'Health statistics retrieved successfully',
         data: stats,
       };
-    } catch (error) {
+    } catch (error: unknown) {
       this.logger.error('Failed to get health stats:', error);
       return {
         success: false,

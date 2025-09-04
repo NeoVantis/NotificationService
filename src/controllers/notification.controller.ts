@@ -65,7 +65,8 @@ export class NotificationController {
         );
       }
 
-      const result = await this.notificationService.sendBulkEmail(sendBulkEmailDto);
+      const result =
+        await this.notificationService.sendBulkEmail(sendBulkEmailDto);
       this.logger.log(`Bulk email campaign started: ${result.campaignId}`);
       return {
         success: true,
@@ -89,8 +90,11 @@ export class NotificationController {
   @UsePipes(new ValidationPipe({ transform: true }))
   async sendTemplateEmail(@Body() sendTemplateEmailDto: SendTemplateEmailDto) {
     try {
-      const result = await this.notificationService.sendTemplateEmail(sendTemplateEmailDto);
-      this.logger.log(`Template email queued for ${sendTemplateEmailDto.recipientEmail}`);
+      const result =
+        await this.notificationService.sendTemplateEmail(sendTemplateEmailDto);
+      this.logger.log(
+        `Template email queued for ${sendTemplateEmailDto.recipientEmail}`,
+      );
       return {
         success: true,
         message: 'Template email queued successfully',
@@ -98,10 +102,10 @@ export class NotificationController {
       };
     } catch (error) {
       this.logger.error('Failed to send template email:', error);
-      const status = error.message.includes('not found') 
-        ? HttpStatus.NOT_FOUND 
+      const status = error.message.includes('not found')
+        ? HttpStatus.NOT_FOUND
         : HttpStatus.INTERNAL_SERVER_ERROR;
-      
+
       throw new HttpException(
         {
           success: false,
@@ -115,7 +119,9 @@ export class NotificationController {
 
   @Post('send-bulk-template-email')
   @UsePipes(new ValidationPipe({ transform: true }))
-  async sendBulkTemplateEmail(@Body() sendBulkTemplateEmailDto: SendBulkTemplateEmailDto) {
+  async sendBulkTemplateEmail(
+    @Body() sendBulkTemplateEmailDto: SendBulkTemplateEmailDto,
+  ) {
     try {
       if (sendBulkTemplateEmailDto.recipients.length > 1000) {
         throw new HttpException(
@@ -124,8 +130,12 @@ export class NotificationController {
         );
       }
 
-      const result = await this.notificationService.sendBulkTemplateEmail(sendBulkTemplateEmailDto);
-      this.logger.log(`Bulk template email campaign started: ${result.campaignId}`);
+      const result = await this.notificationService.sendBulkTemplateEmail(
+        sendBulkTemplateEmailDto,
+      );
+      this.logger.log(
+        `Bulk template email campaign started: ${result.campaignId}`,
+      );
       return {
         success: true,
         message: 'Bulk template email campaign started successfully',
@@ -133,10 +143,10 @@ export class NotificationController {
       };
     } catch (error) {
       this.logger.error('Failed to send bulk template email:', error);
-      const status = error.message.includes('not found') 
-        ? HttpStatus.NOT_FOUND 
+      const status = error.message.includes('not found')
+        ? HttpStatus.NOT_FOUND
         : HttpStatus.INTERNAL_SERVER_ERROR;
-      
+
       throw new HttpException(
         {
           success: false,
@@ -196,7 +206,8 @@ export class NotificationController {
   @Get(':id')
   async getNotificationById(@Param('id') id: string) {
     try {
-      const notification = await this.notificationService.getNotificationById(id);
+      const notification =
+        await this.notificationService.getNotificationById(id);
       return {
         success: true,
         message: 'Notification retrieved successfully',
@@ -204,10 +215,10 @@ export class NotificationController {
       };
     } catch (error) {
       this.logger.error(`Failed to get notification ${id}:`, error);
-      const status = error.message.includes('not found') 
-        ? HttpStatus.NOT_FOUND 
+      const status = error.message.includes('not found')
+        ? HttpStatus.NOT_FOUND
         : HttpStatus.INTERNAL_SERVER_ERROR;
-      
+
       throw new HttpException(
         {
           success: false,
@@ -231,10 +242,10 @@ export class NotificationController {
       };
     } catch (error) {
       this.logger.error(`Failed to retry notification ${id}:`, error);
-      const status = error.message.includes('not found') 
-        ? HttpStatus.NOT_FOUND 
+      const status = error.message.includes('not found')
+        ? HttpStatus.NOT_FOUND
         : HttpStatus.BAD_REQUEST;
-      
+
       throw new HttpException(
         {
           success: false,
@@ -251,7 +262,8 @@ export class NotificationController {
   @UsePipes(new ValidationPipe({ transform: true }))
   async createEmailTemplate(@Body() createTemplateDto: CreateEmailTemplateDto) {
     try {
-      const template = await this.notificationService.createEmailTemplate(createTemplateDto);
+      const template =
+        await this.notificationService.createEmailTemplate(createTemplateDto);
       this.logger.log(`Email template created: ${template.name}`);
       return {
         success: true,
@@ -260,10 +272,10 @@ export class NotificationController {
       };
     } catch (error) {
       this.logger.error('Failed to create email template:', error);
-      const status = error.message.includes('already exists') 
-        ? HttpStatus.CONFLICT 
+      const status = error.message.includes('already exists')
+        ? HttpStatus.CONFLICT
         : HttpStatus.INTERNAL_SERVER_ERROR;
-      
+
       throw new HttpException(
         {
           success: false,
@@ -300,7 +312,8 @@ export class NotificationController {
   @Get('templates/:name')
   async getEmailTemplateByName(@Param('name') name: string) {
     try {
-      const template = await this.notificationService.getEmailTemplateByName(name);
+      const template =
+        await this.notificationService.getEmailTemplateByName(name);
       return {
         success: true,
         message: 'Email template retrieved successfully',
@@ -308,10 +321,10 @@ export class NotificationController {
       };
     } catch (error) {
       this.logger.error(`Failed to get email template ${name}:`, error);
-      const status = error.message.includes('not found') 
-        ? HttpStatus.NOT_FOUND 
+      const status = error.message.includes('not found')
+        ? HttpStatus.NOT_FOUND
         : HttpStatus.INTERNAL_SERVER_ERROR;
-      
+
       throw new HttpException(
         {
           success: false,
@@ -330,7 +343,10 @@ export class NotificationController {
     @Body() updateTemplateDto: UpdateEmailTemplateDto,
   ) {
     try {
-      const template = await this.notificationService.updateEmailTemplate(id, updateTemplateDto);
+      const template = await this.notificationService.updateEmailTemplate(
+        id,
+        updateTemplateDto,
+      );
       this.logger.log(`Email template updated: ${template.name}`);
       return {
         success: true,
@@ -339,10 +355,10 @@ export class NotificationController {
       };
     } catch (error) {
       this.logger.error(`Failed to update email template ${id}:`, error);
-      const status = error.message.includes('not found') 
-        ? HttpStatus.NOT_FOUND 
+      const status = error.message.includes('not found')
+        ? HttpStatus.NOT_FOUND
         : HttpStatus.INTERNAL_SERVER_ERROR;
-      
+
       throw new HttpException(
         {
           success: false,
@@ -365,10 +381,10 @@ export class NotificationController {
       };
     } catch (error) {
       this.logger.error(`Failed to delete email template ${id}:`, error);
-      const status = error.message.includes('not found') 
-        ? HttpStatus.NOT_FOUND 
+      const status = error.message.includes('not found')
+        ? HttpStatus.NOT_FOUND
         : HttpStatus.INTERNAL_SERVER_ERROR;
-      
+
       throw new HttpException(
         {
           success: false,

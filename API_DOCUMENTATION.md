@@ -6,7 +6,7 @@ The NeoVantis Notification Service is a robust, scalable microservice built with
 
 ## Base URL
 ```
-Development: http://localhost:4321
+Development: http://localhost:3001
 Production: https://notifications.neovantis.xyz
 ```
 

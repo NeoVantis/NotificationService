@@ -7,7 +7,7 @@ A robust, scalable notification service built with NestJS for handling email not
 ### Development Environment
 ```bash
 # Clone the repository
-git clone <repository-url>
+git clone https://github.com/NeoVantis/NotificationService.git
 cd NotificationService
 
 # Run the development setup script
@@ -18,7 +18,7 @@ chmod +x setup-dev.sh
 ### Production Environment
 ```bash
 # Clone the repository
-git clone <repository-url>
+git clone https://github.com/NeoVantis/NotificationService.git
 cd NotificationService
 
 # Run the production setup script
@@ -54,7 +54,7 @@ chmod +x setup-prod.sh
 ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
 │   Nginx Proxy   │    │  Notification   │    │   PostgreSQL    │
 │   (Port 80/443) │────│   Service       │────│   Database      │
-│                 │    │  (Port 4321)    │    │   (Port 5432)   │
+│                 │    │  (Port 3001)    │    │   (Port 5432)   │
 └─────────────────┘    └─────────────────┘    └─────────────────┘
                                 │
                                 │
