@@ -82,7 +82,7 @@ import { AppService } from './app.service';
     // Redis/Bull Queue
     BullModule.forRootAsync({
       imports: [ConfigModule],
-      useFactory: async (configService: ConfigService) => ({
+      useFactory: (configService: ConfigService) => ({
         redis: {
           host:
             configService.get('QUEUE_REDIS_HOST') ||

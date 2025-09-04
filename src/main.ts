@@ -47,7 +47,7 @@ async function bootstrap() {
       } else {
         logger.warn('⚠ Email service connection failed - continuing startup');
       }
-    } catch (error) {
+    } catch {
       logger.warn('⚠ Email service health check failed - continuing startup');
     }
 

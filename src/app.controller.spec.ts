@@ -15,8 +15,10 @@ describe('AppController', () => {
   });
 
   describe('root', () => {
-    it('should return "Hello World!"', () => {
-      expect(appController.getHello()).toBe('Hello World!');
+    it('should return service status message', () => {
+      expect(appController.getHello()).toBe(
+        'NeoVantis Notification Service is running! Visit /info for service details or /api/v1/health for health status.',
+      );
     });
   });
 });
