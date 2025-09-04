@@ -84,9 +84,15 @@ import { AppService } from './app.service';
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({
         redis: {
-          host: configService.get('QUEUE_REDIS_HOST') || configService.get('REDIS_HOST'),
-          port: configService.get('QUEUE_REDIS_PORT') || configService.get('REDIS_PORT'),
-          password: configService.get('QUEUE_REDIS_PASSWORD') || configService.get('REDIS_PASSWORD'),
+          host:
+            configService.get('QUEUE_REDIS_HOST') ||
+            configService.get('REDIS_HOST'),
+          port:
+            configService.get('QUEUE_REDIS_PORT') ||
+            configService.get('REDIS_PORT'),
+          password:
+            configService.get('QUEUE_REDIS_PASSWORD') ||
+            configService.get('REDIS_PASSWORD'),
         },
         defaultJobOptions: {
           attempts: 3,
@@ -106,20 +112,12 @@ import { AppService } from './app.service';
     }),
 
     // TypeORM repositories
-    TypeOrmModule.forFeature([
-      Notification,
-      EmailTemplate,
-      NotificationAudit,
-    ]),
+    TypeOrmModule.forFeature([Notification, EmailTemplate, NotificationAudit]),
 
     // Health checks
     TerminusModule,
   ],
-  controllers: [
-    AppController,
-    NotificationController,
-    HealthController,
-  ],
+  controllers: [AppController, NotificationController, HealthController],
   providers: [
     AppService,
     EmailService,
