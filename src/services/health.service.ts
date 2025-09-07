@@ -37,10 +37,10 @@ export class HealthService {
 
     // Get queue health
     const queueHealth = await this.getQueueHealth();
-    
+
     // Get email service health
     const emailHealth = await this.getEmailServiceHealth();
-    
+
     // Get database health
     const dbHealth = await this.getDatabaseHealth();
 
@@ -80,9 +80,7 @@ export class HealthService {
 
   async getSimpleHealthStatus(): Promise<{ status: string }> {
     try {
-      await this.health.check([
-        () => this.db.pingCheck('database'),
-      ]);
+      await this.health.check([() => this.db.pingCheck('database')]);
       return { status: 'ok' };
     } catch (error) {
       this.logger.error('Health check failed:', error);
@@ -194,10 +192,10 @@ export class HealthService {
 
       const recentActivity = await this.notificationRepository
         .createQueryBuilder('notification')
-        .select('DATE_TRUNC(\'hour\', notification.createdAt)', 'hour')
+        .select("DATE_TRUNC('hour', notification.createdAt)", 'hour')
         .addSelect('COUNT(*)', 'count')
         .where('notification.createdAt >= :yesterday', { yesterday })
-        .groupBy('DATE_TRUNC(\'hour\', notification.createdAt)')
+        .groupBy("DATE_TRUNC('hour', notification.createdAt)")
         .orderBy('hour', 'ASC')
         .getRawMany();
 

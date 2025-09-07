@@ -41,7 +41,9 @@ export class SeederService implements OnApplicationBootstrap {
     }
   }
 
-  async seedTemplate(templateData: Partial<EmailTemplate>): Promise<EmailTemplate> {
+  async seedTemplate(
+    templateData: Partial<EmailTemplate>,
+  ): Promise<EmailTemplate> {
     const existingTemplate = await this.emailTemplateRepository.findOne({
       where: { name: templateData.name },
     });
@@ -56,13 +58,13 @@ export class SeederService implements OnApplicationBootstrap {
 
   async resetTemplates(): Promise<void> {
     this.logger.log('Resetting all email templates...');
-    
+
     // Delete all existing templates
     await this.emailTemplateRepository.delete({});
-    
+
     // Re-seed default templates
     await this.seedEmailTemplates();
-    
+
     this.logger.log('Email templates reset completed');
   }
 }

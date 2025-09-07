@@ -3,8 +3,14 @@ import type { Job } from 'bull';
 import { Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Notification, NotificationStatus } from '../entities/notification.entity';
-import { NotificationAudit, AuditAction } from '../entities/notification-audit.entity';
+import {
+  Notification,
+  NotificationStatus,
+} from '../entities/notification.entity';
+import {
+  NotificationAudit,
+  AuditAction,
+} from '../entities/notification-audit.entity';
 import { EmailService } from '../services/email.service';
 
 interface EmailJobData {
@@ -26,7 +32,7 @@ export class EmailProcessor {
   @Process('send-email')
   async handleSendEmail(job: Job<EmailJobData>): Promise<void> {
     const { notificationId } = job.data;
-    
+
     try {
       // Update status to processing
       await this.notificationRepository.update(notificationId, {
@@ -65,9 +71,16 @@ export class EmailProcessor {
         'Email sent successfully',
       );
 
-      this.logger.log(`Email sent successfully for notification ${notificationId}`);
+      this.logger.log(
+        `Email sent successfully for notification ${notificationId}`,
+      );
     } catch (error) {
-      await this.handleEmailError(notificationId, error, job.attemptsMade, job.opts.attempts || 3);
+      await this.handleEmailError(
+        notificationId,
+        error,
+        job.attemptsMade,
+        job.opts.attempts || 3,
+      );
     }
   }
 
@@ -86,7 +99,9 @@ export class EmailProcessor {
       });
 
       if (!notification) {
-        this.logger.error(`Notification ${notificationId} not found during error handling`);
+        this.logger.error(
+          `Notification ${notificationId} not found during error handling`,
+        );
         return;
       }
 
@@ -106,7 +121,9 @@ export class EmailProcessor {
           `Email failed after ${attemptsMade} attempts: ${errorMessage}`,
         );
 
-        this.logger.error(`Email failed permanently for notification ${notificationId}: ${errorMessage}`);
+        this.logger.error(
+          `Email failed permanently for notification ${notificationId}: ${errorMessage}`,
+        );
       } else {
         // Retry attempt
         await this.notificationRepository.update(notificationId, {
@@ -115,10 +132,15 @@ export class EmailProcessor {
           retryCount: attemptsMade,
         });
 
-        this.logger.warn(`Email failed for notification ${notificationId}, will retry. Attempt ${attemptsMade}/${maxAttempts}: ${errorMessage}`);
+        this.logger.warn(
+          `Email failed for notification ${notificationId}, will retry. Attempt ${attemptsMade}/${maxAttempts}: ${errorMessage}`,
+        );
       }
     } catch (updateError) {
-      this.logger.error(`Failed to update notification ${notificationId} after error:`, updateError);
+      this.logger.error(
+        `Failed to update notification ${notificationId} after error:`,
+        updateError,
+      );
     }
   }
 

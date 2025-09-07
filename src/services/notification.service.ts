@@ -3,16 +3,16 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Between, FindOptionsWhere } from 'typeorm';
 import { InjectQueue } from '@nestjs/bull';
 import type { Queue } from 'bull';
-import { 
-  Notification, 
-  NotificationStatus, 
+import {
+  Notification,
+  NotificationStatus,
   NotificationType,
-  NotificationPriority 
+  NotificationPriority,
 } from '../entities/notification.entity';
 import { EmailTemplate } from '../entities/email-template.entity';
-import { 
-  NotificationAudit, 
-  AuditAction 
+import {
+  NotificationAudit,
+  AuditAction,
 } from '../entities/notification-audit.entity';
 import { EmailService } from './email.service';
 import {
@@ -40,7 +40,10 @@ export class NotificationService {
     private emailService: EmailService,
   ) {}
 
-  async sendEmail(sendEmailDto: SendEmailDto, userId?: string): Promise<{ id: string; status: string }> {
+  async sendEmail(
+    sendEmailDto: SendEmailDto,
+    userId?: string,
+  ): Promise<{ id: string; status: string }> {
     try {
       const notification = new Notification();
       notification.notificationType = NotificationType.EMAIL;
@@ -49,18 +52,22 @@ export class NotificationService {
       notification.subject = sendEmailDto.subject;
       notification.content = sendEmailDto.content;
       notification.htmlContent = sendEmailDto.htmlContent;
-      notification.priority = sendEmailDto.priority || NotificationPriority.NORMAL;
-      notification.scheduledAt = sendEmailDto.scheduledAt ? new Date(sendEmailDto.scheduledAt) : new Date();
+      notification.priority =
+        sendEmailDto.priority || NotificationPriority.NORMAL;
+      notification.scheduledAt = sendEmailDto.scheduledAt
+        ? new Date(sendEmailDto.scheduledAt)
+        : new Date();
       notification.metadata = sendEmailDto.metadata;
       notification.campaignId = sendEmailDto.campaignId;
       notification.status = NotificationStatus.PENDING;
 
-      const savedNotification = await this.notificationRepository.save(notification);
+      const savedNotification =
+        await this.notificationRepository.save(notification);
 
       // Add to queue for processing
       const jobPriority = this.getJobPriority(notification.priority);
       const delay = notification.scheduledAt.getTime() - Date.now();
-      
+
       await this.emailQueue.add(
         'send-email',
         { notificationId: savedNotification.id },
@@ -84,8 +91,10 @@ export class NotificationService {
         'Email queued for sending',
       );
 
-      this.logger.log(`Email queued for ${sendEmailDto.recipientEmail} with ID: ${savedNotification.id}`);
-      
+      this.logger.log(
+        `Email queued for ${sendEmailDto.recipientEmail} with ID: ${savedNotification.id}`,
+      );
+
       return {
         id: savedNotification.id,
         status: 'queued',
@@ -96,13 +105,18 @@ export class NotificationService {
     }
   }
 
-  async sendBulkEmail(sendBulkEmailDto: SendBulkEmailDto, userId?: string): Promise<{ 
-    campaignId: string; 
-    totalEmails: number; 
-    queuedEmails: number; 
+  async sendBulkEmail(
+    sendBulkEmailDto: SendBulkEmailDto,
+    userId?: string,
+  ): Promise<{
+    campaignId: string;
+    totalEmails: number;
+    queuedEmails: number;
   }> {
     try {
-      const campaignId = sendBulkEmailDto.campaignId || `bulk_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      const campaignId =
+        sendBulkEmailDto.campaignId ||
+        `bulk_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       let queuedEmails = 0;
 
       // Log bulk email start
@@ -145,7 +159,9 @@ export class NotificationService {
         { campaignId },
       );
 
-      this.logger.log(`Bulk email campaign ${campaignId}: ${queuedEmails}/${sendBulkEmailDto.recipientEmails.length} emails queued`);
+      this.logger.log(
+        `Bulk email campaign ${campaignId}: ${queuedEmails}/${sendBulkEmailDto.recipientEmails.length} emails queued`,
+      );
 
       return {
         campaignId,
@@ -158,23 +174,40 @@ export class NotificationService {
     }
   }
 
-  async sendTemplateEmail(sendTemplateEmailDto: SendTemplateEmailDto, userId?: string): Promise<{ id: string; status: string }> {
+  async sendTemplateEmail(
+    sendTemplateEmailDto: SendTemplateEmailDto,
+    userId?: string,
+  ): Promise<{ id: string; status: string }> {
     try {
       const template = await this.emailTemplateRepository.findOne({
         where: { name: sendTemplateEmailDto.templateName, isActive: true },
       });
 
       if (!template) {
-        throw new NotFoundException(`Template '${sendTemplateEmailDto.templateName}' not found or inactive`);
+        throw new NotFoundException(
+          `Template '${sendTemplateEmailDto.templateName}' not found or inactive`,
+        );
       }
 
       // Merge default data with provided data
-      const templateData = { ...template.defaultData, ...sendTemplateEmailDto.templateData };
+      const templateData = {
+        ...template.defaultData,
+        ...sendTemplateEmailDto.templateData,
+      };
 
       // Replace template variables
-      const subject = this.emailService.replaceTemplateVariables(template.subject, templateData);
-      const content = this.emailService.replaceTemplateVariables(template.textContent, templateData);
-      const htmlContent = this.emailService.replaceTemplateVariables(template.htmlContent, templateData);
+      const subject = this.emailService.replaceTemplateVariables(
+        template.subject,
+        templateData,
+      );
+      const content = this.emailService.replaceTemplateVariables(
+        template.textContent,
+        templateData,
+      );
+      const htmlContent = this.emailService.replaceTemplateVariables(
+        template.htmlContent,
+        templateData,
+      );
 
       const emailDto: SendEmailDto = {
         recipientEmail: sendTemplateEmailDto.recipientEmail,
@@ -203,7 +236,10 @@ export class NotificationService {
     }
   }
 
-  async sendBulkTemplateEmail(sendBulkTemplateEmailDto: SendBulkTemplateEmailDto, userId?: string): Promise<{
+  async sendBulkTemplateEmail(
+    sendBulkTemplateEmailDto: SendBulkTemplateEmailDto,
+    userId?: string,
+  ): Promise<{
     campaignId: string;
     totalEmails: number;
     queuedEmails: number;
@@ -214,10 +250,14 @@ export class NotificationService {
       });
 
       if (!template) {
-        throw new NotFoundException(`Template '${sendBulkTemplateEmailDto.templateName}' not found or inactive`);
+        throw new NotFoundException(
+          `Template '${sendBulkTemplateEmailDto.templateName}' not found or inactive`,
+        );
       }
 
-      const campaignId = sendBulkTemplateEmailDto.campaignId || `bulk_template_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      const campaignId =
+        sendBulkTemplateEmailDto.campaignId ||
+        `bulk_template_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       let queuedEmails = 0;
 
       for (const recipient of sendBulkTemplateEmailDto.recipients) {
@@ -236,11 +276,16 @@ export class NotificationService {
           await this.sendTemplateEmail(templateEmailDto, userId);
           queuedEmails++;
         } catch (error) {
-          this.logger.error(`Failed to queue template email for ${recipient.email}:`, error);
+          this.logger.error(
+            `Failed to queue template email for ${recipient.email}:`,
+            error,
+          );
         }
       }
 
-      this.logger.log(`Bulk template email campaign ${campaignId}: ${queuedEmails}/${sendBulkTemplateEmailDto.recipients.length} emails queued`);
+      this.logger.log(
+        `Bulk template email campaign ${campaignId}: ${queuedEmails}/${sendBulkTemplateEmailDto.recipients.length} emails queued`,
+      );
 
       return {
         campaignId,
@@ -276,15 +321,19 @@ export class NotificationService {
       where.campaignId = query.campaignId;
     }
     if (query.startDate && query.endDate) {
-      where.createdAt = Between(new Date(query.startDate), new Date(query.endDate));
+      where.createdAt = Between(
+        new Date(query.startDate),
+        new Date(query.endDate),
+      );
     }
 
-    const [notifications, total] = await this.notificationRepository.findAndCount({
-      where,
-      order: { createdAt: 'DESC' },
-      skip,
-      take: limit,
-    });
+    const [notifications, total] =
+      await this.notificationRepository.findAndCount({
+        where,
+        order: { createdAt: 'DESC' },
+        skip,
+        take: limit,
+      });
 
     return {
       notifications,
@@ -342,22 +391,31 @@ export class NotificationService {
   }
 
   // Template management methods
-  async createEmailTemplate(createTemplateDto: CreateEmailTemplateDto): Promise<EmailTemplate> {
+  async createEmailTemplate(
+    createTemplateDto: CreateEmailTemplateDto,
+  ): Promise<EmailTemplate> {
     const existingTemplate = await this.emailTemplateRepository.findOne({
       where: { name: createTemplateDto.name },
     });
 
     if (existingTemplate) {
-      throw new Error(`Template with name '${createTemplateDto.name}' already exists`);
+      throw new Error(
+        `Template with name '${createTemplateDto.name}' already exists`,
+      );
     }
 
     const template = this.emailTemplateRepository.create(createTemplateDto);
     return await this.emailTemplateRepository.save(template);
   }
 
-  async updateEmailTemplate(id: string, updateTemplateDto: UpdateEmailTemplateDto): Promise<EmailTemplate> {
-    const template = await this.emailTemplateRepository.findOne({ where: { id } });
-    
+  async updateEmailTemplate(
+    id: string,
+    updateTemplateDto: UpdateEmailTemplateDto,
+  ): Promise<EmailTemplate> {
+    const template = await this.emailTemplateRepository.findOne({
+      where: { id },
+    });
+
     if (!template) {
       throw new NotFoundException(`Template with ID ${id} not found`);
     }
@@ -386,15 +444,17 @@ export class NotificationService {
   }
 
   async deleteEmailTemplate(id: string): Promise<{ message: string }> {
-    const template = await this.emailTemplateRepository.findOne({ where: { id } });
-    
+    const template = await this.emailTemplateRepository.findOne({
+      where: { id },
+    });
+
     if (!template) {
       throw new NotFoundException(`Template with ID ${id} not found`);
     }
 
     // Soft delete by setting isActive to false
     await this.emailTemplateRepository.update(id, { isActive: false });
-    
+
     return { message: 'Template deleted successfully' };
   }
 
