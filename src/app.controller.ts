@@ -15,7 +15,8 @@ export class AppController {
     return {
       service: 'NeoVantis Notification Service',
       version: '1.0.0',
-      description: 'Advanced notification service with email capabilities, message queues, and template support',
+      description:
+        'Advanced notification service with email capabilities, message queues, and template support',
       features: [
         'Email notifications with Mailcow integration',
         'Bulk email campaigns',

@@ -55,7 +55,7 @@ export class EmailService {
     try {
       const fromName = this.configService.get<string>('MAIL_FROM_NAME');
       const fromEmail = this.configService.get<string>('MAIL_FROM_EMAIL');
-      
+
       const mailOptions = {
         from: options.from || `"${fromName}" <${fromEmail}>`,
         to: options.to,
@@ -67,8 +67,10 @@ export class EmailService {
       };
 
       const info = await this.transporter.sendMail(mailOptions);
-      
-      this.logger.log(`Email sent successfully to ${options.to}. Message ID: ${info.messageId}`);
+
+      this.logger.log(
+        `Email sent successfully to ${options.to}. Message ID: ${info.messageId}`,
+      );
       return true;
     } catch (error) {
       this.logger.error(`Failed to send email to ${options.to}:`, error);
@@ -93,9 +95,9 @@ export class EmailService {
     text: string,
     html?: string,
   ): Promise<{ success: string[]; failed: string[] }> {
-    const results: { success: string[]; failed: string[] } = { 
-      success: [], 
-      failed: [] 
+    const results: { success: string[]; failed: string[] } = {
+      success: [],
+      failed: [],
     };
 
     for (const recipient of recipients) {
@@ -116,31 +118,37 @@ export class EmailService {
     this.logger.log(
       `Bulk email completed: ${results.success.length} successful, ${results.failed.length} failed`,
     );
-    
+
     return results;
   }
 
-  replaceTemplateVariables(template: string, data: Record<string, any>): string {
+  replaceTemplateVariables(
+    template: string,
+    data: Record<string, any>,
+  ): string {
     let result = template;
-    
+
     for (const [key, value] of Object.entries(data)) {
       const regex = new RegExp(`{{\\s*${key}\\s*}}`, 'g');
       result = result.replace(regex, String(value));
     }
-    
+
     return result;
   }
 
-  validateTemplateVariables(template: string, requiredVariables: string[]): string[] {
+  validateTemplateVariables(
+    template: string,
+    requiredVariables: string[],
+  ): string[] {
     const missingVariables: string[] = [];
-    
+
     for (const variable of requiredVariables) {
       const regex = new RegExp(`{{\\s*${variable}\\s*}}`, 'g');
       if (!regex.test(template)) {
         missingVariables.push(variable);
       }
     }
-    
+
     return missingVariables;
   }
 }
