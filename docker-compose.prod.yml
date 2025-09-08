@@ -80,6 +80,8 @@ services:
       MAIL_SECURE: 'true'
       MAIL_USER: no-reply@neovantis.xyz
       MAIL_PASSWORD: ${MAIL_PASSWORD}
+      MAIL_FROM_NAME: ${MAIL_FROM_NAME}
+      MAIL_FROM_EMAIL: ${MAIL_FROM_EMAIL}
       LOG_LEVEL: info
       API_KEY: ${API_KEY}
       CORS_ORIGIN: ${CORS_ORIGIN}

@@ -1,596 +1,355 @@
-# NeoVantis Notification Service API Documentation
+# NeoVantis Notification Service – Accurate API Reference
 
-## Overview
+Updated to reflect the current implemented controllers, DTOs and responses in the codebase.
 
-The NeoVantis Notification Service is a robust, scalable microservice built with NestJS for handling email notifications with queue processing, template management, and comprehensive monitoring.
-
-## Base URL
-```
+## Base URLs
 Development: http://localhost:4321
 Production: https://notifications.neovantis.xyz
-```
 
 ## Authentication
-Currently, the service operates without authentication. For production use, implement API key authentication or JWT tokens.
+None at present (all endpoints are open). For production add API key/JWT + rate limiting.
 
-## API Endpoints
+## Conventions
+Response (success): { success: true, message: string, data?: any }
+Response (error): { success: false, message: string, error: string }
+Some health endpoints return raw objects (no success wrapper) as implemented.
+Timestamps are ISO 8601.
 
-### 📧 Email Notifications
+## 1. Email Notification Endpoints
 
-#### Send Single Email
-```http
+### 1.1 Send Email
 POST /api/v1/notifications/send-email
-```
 
-**Request Body:**
-```json
+Request Body (SendEmailDto):
 {
-  "to": "user@example.com",
-  "subject": "Email Subject",
-  "body": "Plain text email content",
-  "htmlBody": "<h1>HTML Email Content</h1>",
-  "priority": "high"
+  "recipientEmail": "user@example.com",
+  "recipientName": "Optional Name",
+  "subject": "Welcome",
+  "content": "Plain text body",
+  "htmlContent": "<p>HTML body</p>",
+  "priority": "low|normal|high|critical",
+  "scheduledAt": "2025-09-08T10:15:00.000Z",
+  "metadata": { "source": "signup" },
+  "campaignId": "spring_launch"
 }
-```
 
-**Parameters:**
-- `to` (string, required): Recipient email address
-- `subject` (string, required): Email subject line
-- `body` (string, required): Plain text email content
-- `htmlBody` (string, optional): HTML formatted email content
-- `priority` (string, optional): Email priority (`low`, `normal`, `high`)
-
-**Response:**
-```json
+Response:
 {
   "success": true,
   "message": "Email queued successfully",
-  "data": {
-    "id": "uuid",
-    "status": "pending",
-    "recipient": "user@example.com",
-    "subject": "Email Subject",
-    "priority": "high",
-    "createdAt": "2025-09-04T17:30:00.000Z"
-  }
+  "data": { "id": "uuid", "status": "queued" }
 }
-```
 
-#### Send Bulk Email
-```http
+### 1.2 Send Bulk Email
 POST /api/v1/notifications/send-bulk-email
-```
 
-**Request Body:**
-```json
+Request Body (SendBulkEmailDto):
 {
-  "recipients": ["user1@example.com", "user2@example.com"],
-  "subject": "Bulk Email Subject",
-  "body": "Plain text content for all recipients",
-  "htmlBody": "<h1>HTML content for all recipients</h1>",
-  "priority": "normal"
+  "recipientEmails": ["a@x.com", "b@x.com"],
+  "subject": "Announcement",
+  "content": "Text body",
+  "htmlContent": "<p>HTML body</p>",
+  "priority": "normal",
+  "scheduledAt": "2025-09-08T10:30:00.000Z",
+  "metadata": { "batch": 1 },
+  "campaignId": "announce_001"
 }
-```
 
-**Response:**
-```json
+Limits: max 1000 recipients per request (enforced).
+
+Response:
 {
   "success": true,
-  "message": "Bulk emails queued successfully",
+  "message": "Bulk email campaign started successfully",
   "data": {
-    "totalQueued": 2,
-    "notifications": [
-      {
-        "id": "uuid1",
-        "recipient": "user1@example.com",
-        "status": "pending"
-      },
-      {
-        "id": "uuid2",
-        "recipient": "user2@example.com",
-        "status": "pending"
-      }
-    ]
+    "campaignId": "bulk_...",
+    "totalEmails": 2,
+    "queuedEmails": 2
   }
 }
-```
 
-#### Send Template Email
-```http
+### 1.3 Send Template Email
 POST /api/v1/notifications/send-template-email
-```
 
-**Request Body:**
-```json
+Request Body (SendTemplateEmailDto):
 {
-  "to": "user@example.com",
+  "recipientEmail": "user@example.com",
+  "recipientName": "Jane",
   "templateName": "welcome",
-  "variables": {
-    "name": "John Doe",
-    "activationLink": "https://app.neovantis.xyz/activate/token"
-  },
-  "priority": "high"
+  "templateData": { "name": "Jane", "activationLink": "https://..." },
+  "priority": "high",
+  "scheduledAt": "2025-09-08T11:00:00.000Z",
+  "metadata": { "segment": "beta" },
+  "campaignId": "welcome_q3"
 }
-```
 
-**Parameters:**
-- `to` (string, required): Recipient email address
-- `templateName` (string, required): Name of the email template
-- `variables` (object, optional): Variables to substitute in the template
-- `priority` (string, optional): Email priority
+Response:
+{
+  "success": true,
+  "message": "Template email queued successfully",
+  "data": { "id": "uuid", "status": "queued" }
+}
 
-#### Send Bulk Template Email
-```http
+### 1.4 Send Bulk Template Email
 POST /api/v1/notifications/send-bulk-template-email
-```
 
-**Request Body:**
-```json
+Request Body (SendBulkTemplateEmailDto):
 {
   "recipients": [
-    {
-      "email": "user1@example.com",
-      "variables": {
-        "name": "John Doe",
-        "activationLink": "https://app.neovantis.xyz/activate/token1"
-      }
-    },
-    {
-      "email": "user2@example.com",
-      "variables": {
-        "name": "Jane Smith",
-        "activationLink": "https://app.neovantis.xyz/activate/token2"
-      }
-    }
+    { "email": "a@x.com", "name": "Alice", "templateData": { "name": "Alice" } },
+    { "email": "b@x.com", "templateData": { "name": "Bob" } }
   ],
   "templateName": "welcome",
-  "priority": "normal"
+  "priority": "normal",
+  "scheduledAt": "2025-09-08T12:00:00.000Z",
+  "metadata": { "list": "import_42" },
+  "campaignId": "welcome_bulk_q3"
 }
-```
 
-### 📊 Notification Management
-
-#### Get Notifications
-```http
-GET /api/v1/notifications?page=1&limit=10&status=sent&priority=high
-```
-
-**Query Parameters:**
-- `page` (number, optional): Page number (default: 1)
-- `limit` (number, optional): Items per page (default: 10)
-- `status` (string, optional): Filter by status (`pending`, `sent`, `failed`)
-- `priority` (string, optional): Filter by priority (`low`, `normal`, `high`)
-
-**Response:**
-```json
+Response:
 {
   "success": true,
+  "message": "Bulk template email campaign started successfully",
   "data": {
-    "notifications": [
-      {
-        "id": "uuid",
-        "recipient": "user@example.com",
-        "subject": "Email Subject",
-        "status": "sent",
-        "priority": "high",
-        "sentAt": "2025-09-04T17:35:00.000Z",
-        "createdAt": "2025-09-04T17:30:00.000Z"
-      }
-    ],
-    "pagination": {
-      "page": 1,
-      "limit": 10,
-      "total": 25,
-      "totalPages": 3
-    }
+    "campaignId": "bulk_template_...",
+    "totalEmails": 2,
+    "queuedEmails": 2
   }
 }
-```
 
-#### Get Single Notification
-```http
+## 2. Notification Retrieval & Management
+
+### 2.1 List Notifications
+GET /api/v1/notifications?status=pending&recipientEmail=user@example.com&page=1&limit=10&startDate=2025-09-01T00:00:00.000Z&endDate=2025-09-08T00:00:00.000Z
+
+Supported Query Params:
+- status: pending|processing|sent|failed|retrying
+- recipientEmail
+- campaignId
+- page (default 1)
+- limit (default 10, max 100)
+- startDate + endDate (ISO) – filter createdAt range (both required together)
+
+Response:
+{
+  "success": true,
+  "message": "Notifications retrieved successfully",
+  "data": {
+    "notifications": [ { "id": "uuid", "recipientEmail": "user@example.com", "status": "sent", "subject": "Welcome", "priority": "normal", "createdAt": "...", "sentAt": "..." } ],
+    "total": 1,
+    "page": 1,
+    "limit": 10,
+    "totalPages": 1
+  }
+}
+
+### 2.2 Get Notification By ID
 GET /api/v1/notifications/{id}
-```
 
-**Response:**
-```json
+Response:
 {
   "success": true,
-  "data": {
-    "id": "uuid",
-    "recipient": "user@example.com",
-    "subject": "Email Subject",
-    "body": "Email content",
-    "htmlBody": "<h1>Email content</h1>",
-    "status": "sent",
-    "priority": "high",
-    "attempts": 1,
-    "lastAttemptAt": "2025-09-04T17:35:00.000Z",
-    "sentAt": "2025-09-04T17:35:00.000Z",
-    "createdAt": "2025-09-04T17:30:00.000Z",
-    "metadata": {},
-    "auditLogs": [
-      {
-        "status": "pending",
-        "timestamp": "2025-09-04T17:30:00.000Z"
-      },
-      {
-        "status": "sent",
-        "timestamp": "2025-09-04T17:35:00.000Z"
-      }
-    ]
-  }
+  "message": "Notification retrieved successfully",
+  "data": { "notification": { "id": "uuid", "recipientEmail": "...", "status": "pending", "priority": "normal", "retryCount": 0, "maxRetries": 3, "scheduledAt": "...", "createdAt": "...", "updatedAt": "..." } }
 }
-```
 
-#### Retry Failed Notification
-```http
+### 2.3 Retry Failed Notification
 POST /api/v1/notifications/{id}/retry
-```
 
-**Response:**
-```json
+Only allowed if status = failed and retryCount < maxRetries.
+
+Response (success):
 {
   "success": true,
   "message": "Notification queued for retry",
-  "data": {
-    "id": "uuid",
-    "status": "pending",
-    "attempts": 2
-  }
+  "data": { "status": "queued_for_retry" }
 }
-```
 
-#### Get Notification Statistics
-```http
+### 2.4 Notification Statistics
 GET /api/v1/notifications/stats
-```
 
-**Response:**
-```json
+Response:
 {
   "success": true,
-  "data": {
-    "total": 1000,
-    "pending": 50,
-    "sent": 920,
-    "failed": 30,
-    "successRate": 92.0,
-    "averageDeliveryTime": "2.5s",
-    "dailyStats": {
-      "today": 150,
-      "yesterday": 200,
-      "thisWeek": 750,
-      "thisMonth": 3200
-    }
-  }
+  "message": "Notification statistics retrieved successfully",
+  "data": { "total": 10, "pending": 2, "processing": 0, "sent": 7, "failed": 1, "retrying": 0 }
 }
-```
 
-### 📝 Template Management
+## 3. Email Templates
 
-#### Create Email Template
-```http
+### 3.1 Create Template
 POST /api/v1/notifications/templates
-```
 
-**Request Body:**
-```json
+Request Body (CreateEmailTemplateDto):
 {
   "name": "welcome",
-  "subject": "Welcome to {{appName}}!",
-  "htmlTemplate": "<h1>Welcome {{name}}!</h1><p>Click <a href='{{activationLink}}'>here</a> to activate.</p>",
-  "textTemplate": "Welcome {{name}}! Visit {{activationLink}} to activate your account.",
-  "variables": ["name", "appName", "activationLink"],
-  "category": "user-onboarding",
-  "description": "Welcome email for new users"
+  "subject": "Welcome to {{appName}}",
+  "textContent": "Hi {{name}}",
+  "htmlContent": "<p>Hi {{name}}</p>
+",
+  "description": "Welcome email",
+  "defaultData": { "appName": "NeoVantis" },
+  "requiredVariables": ["name", "appName"],
+  "category": "onboarding"
 }
-```
 
-**Response:**
-```json
+Response:
 {
   "success": true,
-  "message": "Template created successfully",
-  "data": {
-    "id": "uuid",
-    "name": "welcome",
-    "subject": "Welcome to {{appName}}!",
-    "isActive": true,
-    "createdAt": "2025-09-04T17:30:00.000Z"
-  }
+  "message": "Email template created successfully",
+  "data": { "template": { "id": "uuid", "name": "welcome", "subject": "Welcome to {{appName}}", "isActive": true, "createdAt": "..." } }
 }
-```
 
-#### Get All Templates
-```http
-GET /api/v1/notifications/templates?category=user-onboarding&active=true
-```
+### 3.2 List Templates
+GET /api/v1/notifications/templates
 
-**Query Parameters:**
-- `category` (string, optional): Filter by category
-- `active` (boolean, optional): Filter by active status
-
-**Response:**
-```json
+Response:
 {
   "success": true,
-  "data": [
-    {
-      "id": "uuid",
-      "name": "welcome",
-      "subject": "Welcome to {{appName}}!",
-      "category": "user-onboarding",
-      "variables": ["name", "appName", "activationLink"],
-      "isActive": true,
-      "usageCount": 150,
-      "createdAt": "2025-09-04T17:30:00.000Z"
-    }
-  ]
+  "message": "Email templates retrieved successfully",
+  "data": { "templates": [ { "id": "uuid", "name": "welcome", "subject": "Welcome to {{appName}}", "isActive": true } ] }
 }
-```
 
-#### Get Template by Name
-```http
+### 3.3 Get Template By Name
 GET /api/v1/notifications/templates/{name}
-```
 
-**Response:**
-```json
+Response:
 {
   "success": true,
-  "data": {
-    "id": "uuid",
-    "name": "welcome",
-    "subject": "Welcome to {{appName}}!",
-    "htmlTemplate": "<h1>Welcome {{name}}!</h1>",
-    "textTemplate": "Welcome {{name}}!",
-    "variables": ["name", "appName", "activationLink"],
-    "category": "user-onboarding",
-    "description": "Welcome email for new users",
-    "isActive": true,
-    "usageCount": 150,
-    "createdAt": "2025-09-04T17:30:00.000Z",
-    "updatedAt": "2025-09-04T17:30:00.000Z"
-  }
+  "message": "Email template retrieved successfully",
+  "data": { "template": { "id": "uuid", "name": "welcome", "subject": "Welcome to {{appName}}", "textContent": "...", "htmlContent": "...", "isActive": true, "createdAt": "...", "updatedAt": "..." } }
 }
-```
 
-#### Update Template
-```http
+### 3.4 Update Template
 PUT /api/v1/notifications/templates/{id}
-```
 
-**Request Body:**
-```json
+Request Body (partial UpdateEmailTemplateDto, supply only fields to change):
 {
-  "subject": "Updated Welcome to {{appName}}!",
-  "htmlTemplate": "<h1>Updated Welcome {{name}}!</h1>",
-  "isActive": true
+  "subject": "Updated subject",
+  "textContent": "Updated text",
+  "htmlContent": "<p>Updated</p>",
+  "description": "Updated description",
+  "defaultData": { "appName": "New" },
+  "requiredVariables": ["name", "appName"],
+  "category": "onboarding"
 }
-```
 
-#### Delete Template
-```http
+Response:
+{
+  "success": true,
+  "message": "Email template updated successfully",
+  "data": { "template": { "id": "uuid", "name": "welcome", "updatedAt": "..." } }
+}
+
+### 3.5 Delete Template (Soft Deactivate)
 DELETE /api/v1/notifications/templates/{id}
-```
 
-### 🔍 Health Monitoring
+Response:
+{
+  "success": true,
+  "message": "Template deleted successfully"
+}
 
-#### Health Check
-```http
+## 4. Health & Operational Endpoints
+
+### 4.1 Full Health
 GET /api/v1/health
-```
 
-**Response:**
-```json
+Raw Response Example:
 {
   "status": "ok",
-  "info": {
-    "database": {
-      "status": "up"
-    },
-    "email": {
-      "status": "up"
-    },
-    "redis": {
-      "status": "up"
-    }
-  },
-  "error": {},
-  "details": {
-    "database": {
-      "status": "up"
-    },
-    "email": {
-      "status": "up"
-    },
-    "redis": {
-      "status": "up"
-    }
-  }
+  "timestamp": "2025-09-08T09:30:00.000Z",
+  "version": "0.0.1",
+  "uptime": 123.45,
+  "memory": { "total": 512, "free": 400, "used": 112, "usagePercent": 22, "process": { "heapUsed": 30, "heapTotal": 60, "external": 5, "rss": 90 } },
+  "cpu": { "cores": 8, "loadAverage": [0.2,0.3,0.4], "model": "Apple M2", "speed": 2400 },
+  "database": { "status": "healthy", "responseTime": 4 },
+  "queue": { "status": "healthy", "jobs": { "waiting":0, "active":0, "completed":10, "failed":0, "delayed":0 } },
+  "email": { "status": "healthy", "responseTime": 120, "smtp": { "host": "smtp", "port": 587, "secure": false } },
+  "network": { "hostname": "...", "platform": "darwin", "arch": "arm64" }
 }
-```
 
-#### Simple Health Check
-```http
+### 4.2 Simple Health
 GET /api/v1/health/simple
-```
+Response: { "status": "ok" | "error" }
 
-**Response:**
-```json
-{
-  "status": "healthy",
-  "timestamp": "2025-09-04T17:30:00.000Z",
-  "uptime": "2h 30m 45s"
-}
-```
-
-#### System Statistics
-```http
+### 4.3 Health Stats (Detailed Notification Stats)
 GET /api/v1/health/stats
-```
 
-**Response:**
-```json
+Response:
 {
-  "system": {
-    "uptime": "2h 30m 45s",
-    "memory": {
-      "used": "128MB",
-      "total": "512MB",
-      "percentage": 25
-    },
-    "cpu": {
-      "usage": "15%"
-    }
-  },
-  "queue": {
-    "waiting": 5,
-    "active": 2,
-    "completed": 1000,
-    "failed": 10
-  },
-  "database": {
-    "connections": 5,
-    "queries": 15000
+  "success": true,
+  "message": "Health statistics retrieved successfully",
+  "data": {
+    "notifications": { "total": 10, "pending": 2, "processing": 0, "sent": 7, "failed": 1, "retrying": 0 },
+    "recentActivity": [ { "hour": "2025-09-08T09:00:00.000Z", "count": "5" } ],
+    "timestamp": "2025-09-08T09:30:00.000Z"
   }
 }
-```
 
-## Error Responses
+## 5. Error Handling
 
-All endpoints return consistent error responses:
-
-```json
+Validation / business errors (example):
 {
   "success": false,
-  "message": "Error description",
-  "error": "ERROR_CODE",
-  "statusCode": 400,
-  "timestamp": "2025-09-04T17:30:00.000Z",
-  "path": "/api/v1/notifications/send-email"
-}
-```
-
-### Common Error Codes
-- `400` - Bad Request (validation errors)
-- `404` - Not Found (resource doesn't exist)
-- `422` - Unprocessable Entity (business logic errors)
-- `500` - Internal Server Error
-- `503` - Service Unavailable (external service issues)
-
-## Rate Limiting
-
-- **Development**: No rate limiting
-- **Production**: 1000 requests per hour per IP
-
-## Default Email Templates
-
-The service comes with 4 built-in templates:
-
-1. **welcome** - User onboarding emails
-   - Variables: `name`, `activationLink`, `appName`
-
-2. **password-reset** - Password reset emails
-   - Variables: `name`, `resetLink`, `expirationTime`
-
-3. **email-verification** - Email verification
-   - Variables: `name`, `verificationLink`, `code`
-
-4. **notification** - General notifications
-   - Variables: `title`, `message`, `actionLink`, `name`
-
-## WebSocket Events (Future)
-
-Real-time notification status updates will be available via WebSocket:
-
-```javascript
-// Connect to WebSocket
-const socket = io('ws://localhost:4321');
-
-// Listen for notification updates
-socket.on('notification:status', (data) => {
-  console.log(`Notification ${data.id} status: ${data.status}`);
-});
-```
-
-## SDK Integration Examples
-
-### Node.js/JavaScript
-```javascript
-const axios = require('axios');
-
-class NeoVantisNotifications {
-  constructor(baseUrl = 'http://localhost:4321') {
-    this.baseUrl = baseUrl;
-  }
-
-  async sendEmail(emailData) {
-    const response = await axios.post(
-      `${this.baseUrl}/api/v1/notifications/send-email`,
-      emailData
-    );
-    return response.data;
-  }
-
-  async sendTemplateEmail(templateData) {
-    const response = await axios.post(
-      `${this.baseUrl}/api/v1/notifications/send-template-email`,
-      templateData
-    );
-    return response.data;
-  }
+  "message": "Failed to queue email",
+  "error": "Template 'welcome' not found or inactive"
 }
 
-// Usage
-const notifications = new NeoVantisNotifications();
-await notifications.sendEmail({
-  to: 'user@example.com',
-  subject: 'Test Email',
-  body: 'Hello World!',
-  priority: 'high'
-});
-```
+Possible HTTP Status Codes:
+400 Validation / bad input
+404 Resource not found (e.g., template or notification)
+409 Conflict (template already exists)
+500 Internal server error
 
-### cURL Examples
-```bash
-# Send simple email
+## 6. Field Reference (DTO Summary)
+
+Notification Priority: low | normal | high | critical (maps to queue priorities)
+
+SendEmailDto: recipientEmail, recipientName?, subject, content, htmlContent?, priority?, scheduledAt?, metadata?, campaignId?
+SendBulkEmailDto: recipientEmails[], subject, content, htmlContent?, priority?, scheduledAt?, metadata?, campaignId?
+SendTemplateEmailDto: recipientEmail, recipientName?, templateName, templateData (object), priority?, scheduledAt?, metadata?, campaignId?
+SendBulkTemplateEmailDto: recipients[{ email, name?, templateData }], templateName, priority?, scheduledAt?, metadata?, campaignId?
+CreateEmailTemplateDto: name, subject, textContent, htmlContent, description?, defaultData?, requiredVariables?, category?
+UpdateEmailTemplateDto: subject?, textContent?, htmlContent?, description?, defaultData?, requiredVariables?, category?
+
+## 7. cURL Examples (Updated)
+
+Send Email:
 curl -X POST http://localhost:4321/api/v1/notifications/send-email \
   -H "Content-Type: application/json" \
   -d '{
-    "to": "user@example.com",
-    "subject": "Test Email",
-    "body": "Hello World!",
+    "recipientEmail": "user@example.com",
+    "subject": "Test",
+    "content": "Hello",
     "priority": "high"
   }'
 
-# Send template email
+Send Template Email:
 curl -X POST http://localhost:4321/api/v1/notifications/send-template-email \
   -H "Content-Type: application/json" \
   -d '{
-    "to": "user@example.com",
+    "recipientEmail": "user@example.com",
     "templateName": "welcome",
-    "variables": {
-      "name": "John Doe",
-      "activationLink": "https://app.neovantis.xyz/activate/abc123"
-    }
+    "templateData": { "name": "User", "activationLink": "https://app.example/activate" }
   }'
 
-# Check health
-curl http://localhost:4321/api/v1/health
-```
+List Notifications:
+curl "http://localhost:4321/api/v1/notifications?page=1&limit=5&status=sent"
 
-## Monitoring & Logging
+Health:
+curl http://localhost:4321/api/v1/health/simple
 
-- **Logs**: All requests and email processing are logged
-- **Metrics**: Performance metrics available via `/api/v1/health/stats`
-- **Queue Monitoring**: Redis queue status and job processing metrics
-- **Database Monitoring**: Connection pool and query performance
+## 8. Planned / Not Yet Implemented
+- Priority filtering on list endpoint (not currently supported by service)
+- Authentication & API keys
+- WebSocket real-time status events
+- Hard delete for templates (currently soft via isActive=false)
 
-## Support
+## 9. Change Log
+2025-09-08: Rewrote documentation to align with code (DTO names, fields, responses, removed unsupported filters, corrected health outputs).
 
-For API support and questions:
-- **Documentation**: This file
-- **Issues**: Create GitHub issues
-- **Email**: devops@neovantis.xyz
+## 10. Support
+Issues: GitHub repository issue tracker
+Email: devops@neovantis.xyz
+
