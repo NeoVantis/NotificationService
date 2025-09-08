@@ -55,7 +55,7 @@ export class EmailService {
     try {
       const fromName = this.configService.get<string>('MAIL_FROM_NAME');
       const fromEmail = this.configService.get<string>('MAIL_FROM_EMAIL');
-      
+
       const mailOptions = {
         from: options.from || `"${fromName}" <${fromEmail}>`,
         to: options.to,
@@ -67,7 +67,7 @@ export class EmailService {
       };
 
       const info = await this.transporter.sendMail(mailOptions);
-      
+
       this.logger.log(`Email sent successfully to ${options.to}. Message ID: ${info.messageId}`);
       return true;
     } catch (error) {

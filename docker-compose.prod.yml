@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   # PostgreSQL Database
   postgres:
@@ -68,6 +66,7 @@ services:
       DB_HOST: postgres
       DB_PORT: 5432
       DB_NAME: notifications_prod
+      DB_USER: notifications_user
       DB_USERNAME: notifications_user
       DB_PASSWORD: ${DB_PASSWORD}
       REDIS_HOST: redis
@@ -80,7 +79,7 @@ services:
       MAIL_PORT: 465
       MAIL_SECURE: 'true'
       MAIL_USER: no-reply@neovantis.xyz
-      MAIL_PASS: ${MAIL_PASS}
+      MAIL_PASSWORD: ${MAIL_PASSWORD}
       LOG_LEVEL: info
       API_KEY: ${API_KEY}
       CORS_ORIGIN: ${CORS_ORIGIN}

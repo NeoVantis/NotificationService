@@ -61,14 +61,15 @@ import { AppService } from './app.service';
       ],
     }),
 
-    // Database
-    TypeOrmModule.forRootAsync({
+  // Database
+  TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => ({
         type: 'postgres',
         host: configService.get('DB_HOST'),
         port: configService.get('DB_PORT'),
-        username: configService.get('DB_USER'),
+    // Support both DB_USER and DB_USERNAME (compose uses DB_USERNAME)
+    username: configService.get('DB_USER') || configService.get('DB_USERNAME'),
         password: configService.get('DB_PASSWORD'),
         database: configService.get('DB_NAME'),
         entities: [Notification, EmailTemplate, NotificationAudit],
@@ -82,7 +83,7 @@ import { AppService } from './app.service';
     // Redis/Bull Queue
     BullModule.forRootAsync({
       imports: [ConfigModule],
-      useFactory: async (configService: ConfigService) => ({
+      useFactory: (configService: ConfigService) => ({
         redis: {
           host: configService.get('QUEUE_REDIS_HOST') || configService.get('REDIS_HOST'),
           port: configService.get('QUEUE_REDIS_PORT') || configService.get('REDIS_PORT'),
@@ -90,10 +91,7 @@ import { AppService } from './app.service';
         },
         defaultJobOptions: {
           attempts: 3,
-          backoff: {
-            type: 'exponential',
-            delay: 2000,
-          },
+          backoff: { type: 'exponential', delay: 2000 },
           removeOnComplete: 100,
           removeOnFail: 50,
         },
@@ -105,21 +103,13 @@ import { AppService } from './app.service';
       name: 'email',
     }),
 
-    // TypeORM repositories
-    TypeOrmModule.forFeature([
-      Notification,
-      EmailTemplate,
-      NotificationAudit,
-    ]),
+  // TypeORM repositories
+  TypeOrmModule.forFeature([Notification, EmailTemplate, NotificationAudit]),
 
     // Health checks
     TerminusModule,
   ],
-  controllers: [
-    AppController,
-    NotificationController,
-    HealthController,
-  ],
+  controllers: [AppController, NotificationController, HealthController],
   providers: [
     AppService,
     EmailService,

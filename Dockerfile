@@ -1,13 +1,13 @@
 # Multi-stage build for production
-FROM node:18-alpine AS builder
+FROM node:22-alpine AS builder
 
 WORKDIR /app
 
 # Copy package files
 COPY package*.json ./
 
-# Install dependencies
-RUN npm ci --only=production && npm cache clean --force
+# Install all dependencies (dev needed for Nest build)
+RUN npm ci && npm cache clean --force
 
 # Copy source code
 COPY . .
@@ -15,8 +15,11 @@ COPY . .
 # Build the application
 RUN npm run build
 
+# Prune dev dependencies to shrink final image
+RUN npm prune --production
+
 # Production stage
-FROM node:18-alpine AS production
+FROM node:22-alpine AS production
 
 # Create app directory
 WORKDIR /app
@@ -25,15 +28,10 @@ WORKDIR /app
 RUN addgroup -g 1001 -S nodejs
 RUN adduser -S nestjs -u 1001
 
-# Copy package files
-COPY package*.json ./
-
-# Install only production dependencies
-RUN npm ci --only=production && npm cache clean --force
-
-# Copy built application from builder stage
+# Copy built application and pruned node_modules from builder stage
 COPY --from=builder --chown=nestjs:nodejs /app/dist ./dist
 COPY --from=builder --chown=nestjs:nodejs /app/node_modules ./node_modules
+COPY --from=builder --chown=nestjs:nodejs /app/package*.json ./
 
 # Create logs directory
 RUN mkdir -p logs && chown -R nestjs:nodejs logs

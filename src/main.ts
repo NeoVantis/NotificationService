@@ -7,10 +7,10 @@ import { HealthService } from './services/health.service';
 
 async function bootstrap() {
   const logger = new Logger('Bootstrap');
-  
+
   try {
     logger.log('Starting NeoVantis Notification Service...');
-    
+
     const app = await NestFactory.create(AppModule, {
       logger: ['log', 'error', 'warn', 'debug', 'verbose'],
     });
@@ -73,7 +73,6 @@ async function bootstrap() {
     logger.log(`📧 Email service configured for: ${configService.get('MAIL_HOST')}`);
     logger.log(`📊 Health check available at: http://localhost:${port}/api/v1/health`);
     logger.log(`📝 API Documentation: http://localhost:${port}/api/v1/notifications`);
-    
   } catch (error) {
     logger.error('❌ Failed to start application:', error);
     process.exit(1);
